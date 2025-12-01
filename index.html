@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Elegant Celebration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Montserrat:wght=300;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles - Pinkish Gradient */
+        body {
+            font-family: 'Montserrat', sans-serif;
+            /* UPDATED: Soft Pink Gradient Background */
+            background: linear-gradient(135deg, #ffdde1 0%, #ee9ca7 100%); 
+            color: #444; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            transition: background 0.8s ease; 
+        }
+        
+        /* State for Celebration View */
+        body.is-celebrating {
+            /* UPDATED: Deep Pink/Burgundy for contrast */
+            background: linear-gradient(180deg, #5D0836 0%, #880E4F 100%); 
+        }
+        
+        /* Elements to hide when celebrating */
+        body.is-celebrating .main-app-content,
+        body.is-celebrating #celebrate-btn-container {
+            display: none;
+        }
+
+        /* --- Envelope Styles --- */
+        .envelope-container {
+            width: 85vw;
+            max-width: 320px;
+            height: 220px;
+            cursor: pointer;
+            position: relative;
+            margin-top: 4rem;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35), 0 0 10px rgba(255, 255, 255, 0.8) inset;
+            border-radius: 1rem;
+            transition: all 0.8s ease-in-out;
+            z-index: 10;
+        }
+
+        .envelope {
+            position: relative;
+            background-color: #fff8e1; /* Pale Gold/Cream Base */
+            border: 2px solid #880E4F; /* Deep Burgundy border */
+            height: 100%;
+            border-radius: 1rem;
+            transition: all 0.5s;
+        }
+
+        /* Envelope Flap (Deep Burgundy Accent) */
+        .flap {
+            border: none;
+            clip-path: polygon(50% 0, 100% 50%, 0 50%);
+            background-image: linear-gradient(to bottom right, #880E4F, #5D0836);
+            height: 50%;
+            width: 100%;
+            position: absolute;
+            top: -1px;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+            border-top-left-radius: 0.8rem;
+            border-top-right-radius: 0.8rem;
+            z-index: 20;
+        }
+
+        .envelope-container.open .flap {
+            transform: rotateX(180deg) translateY(100%);
+            transform-origin: top center;
+            z-index: -1;
+        }
+
+        /* The message card/letter inside */
+        .letter {
+            position: absolute;
+            top: 50%; 
+            left: 50%;
+            transform: translate(-50%, 0) scale(0.6); 
+            width: 85%;
+            height: 90%;
+            background: #ffffff;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            border-radius: 0.75rem;
+            opacity: 0;
+            transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1.2), opacity 0.6s ease-out;
+            transition-delay: 0.4s;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            z-index: 15;
+        }
+
+        .envelope-container.open .letter {
+            transform: translate(-50%, -240px) scale(1);
+            opacity: 1;
+        }
+        
+        /* Typewriter effect styles */
+        .typewriter-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.1em;
+            background-color: #444;
+            animation: blink 0.7s step-end infinite;
+            margin-left: 2px;
+        }
+        
+        @keyframes blink {
+            from, to { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        /* --- Celebration Styles --- */
+        #fireworks-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1000;
+            pointer-events: none; 
+            display: none;
+        }
+        
+        body.is-celebrating #fireworks-canvas {
+            display: block;
+        }
+
+        .fireworks-message-container {
+            position: fixed; 
+            top: 40%; 
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 1s;
+            display: none;
+        }
+
+        body.is-celebrating .fireworks-message-container {
+            display: block;
+            opacity: 1;
+        }
+
+        .fireworks-message {
+            font-family: 'Montserrat', cursive;
+            font-size: 3rem;
+            color: #FFD700; /* Metallic Gold */
+            text-shadow: 0 0 10px #D4AF37, 0 0 20px #FFD700;
+            line-height: 1;
+            padding: 0.5rem;
+        }
+        
+        .fireworks-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1002;
+            display: flex;
+            gap: 1rem;
+            visibility: hidden; 
+        }
+        
+        body.is-celebrating .fireworks-controls {
+            visibility: visible;
+        }
+
+        /* --- Balloon Styles --- */
+        #balloon-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; 
+            pointer-events: none; 
+            z-index: 999; 
+        }
+
+        .balloon {
+            position: absolute;
+            bottom: -150px; 
+            width: 80px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: transparent; 
+            box-shadow: inset -10px -10px 0 rgba(0,0,0,0.1); 
+            animation: rise 10s ease-in forwards; 
+            opacity: 0.8;
+            transform-origin: bottom center; 
+        }
+
+        .balloon::before { 
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 15px;
+            height: 15px;
+            background-color: inherit; 
+            border-radius: 0 100% 0 100%;
+        }
+
+        .balloon::after { 
+            content: '';
+            position: absolute;
+            bottom: -80px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 80px;
+            background-color: rgba(255, 255, 255, 0.5); 
+            filter: drop-shadow(0 1px 0 rgba(0,0,0,0.2));
+        }
+
+        @keyframes rise {
+            0% {
+                bottom: -150px;
+                opacity: 0.8;
+                transform: translateX(0) rotateZ(0deg);
+            }
+            50% {
+                opacity: 1;
+                transform: translateX(var(--offset-x, 0)) rotateZ(var(--rotate-z, 0deg));
+            }
+            100% {
+                bottom: 120vh; 
+                opacity: 0;
+                transform: translateX(var(--offset-x, 0)) rotateZ(var(--rotate-z, 0deg));
+            }
+        }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 640px) {
+            .envelope-container.open .letter {
+                transform: translate(-50%, -190px) scale(1);
+            }
+            .fireworks-message {
+                font-size: 2.5rem;
+            }
+            .fireworks-controls {
+                bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 flex flex-col items-center justify-between">
+
+    <div class="flex flex-col items-center flex-grow w-full max-w-sm main-app-content">
+
+        <h1 id="main-title" class="text-3xl font-bold mt-8 text-center text-red-800 drop-shadow-md">A Envelope for you</h1>
+        
+        <div id="envelope-container" class="envelope-container relative">
+            <div class="envelope">
+                <div class="flap"></div>
+            </div>
+            
+            <div id="letter-content" class="letter hidden">
+                <p id="typed-message" class="text-base leading-relaxed text-gray-700"></p>
+            </div>
+        </div>
+
+        <p id="instruction" class="mt-8 text-xl font-semibold text-gray-700 transition-opacity duration-500">Click Above.</p>
+
+    </div>
+
+    <div class="w-full max-w-sm mt-auto mb-8" id="celebrate-btn-container">
+        <button id="celebrate-btn" class="w-full py-3 bg-gradient-to-r from-[#FFD700] to-[#D4AF37] text-[#880E4F] font-bold rounded-full shadow-xl transition transform duration-300 scale-100 hover:scale-105 opacity-0 cursor-not-allowed" disabled>
+            Yaha Click Kr !!
+        </button>
+    </div>
+
+    <audio id="background-music" src="ukelele music.mp3" loop></audio>
+
+    <canvas id="fireworks-canvas"></canvas>
+    
+    <div id="fireworks-message-container" class="fireworks-message-container">
+        <div class="fireworks-message">Happy Birthday!</div>
+    </div>
+    
+    <div id="fireworks-controls" class="fireworks-controls">
+        <button id="back-btn" class="py-3 px-6 bg-white border border-gray-300 text-gray-800 font-semibold rounded-full shadow-lg hover:bg-gray-100 transition duration-300">
+            Back
+        </button>
+    </div>
+
+    <div id="balloon-container"></div>
+
+
+    <script>
+    const envelopeContainer = document.getElementById('envelope-container');
+    const letterContent = document.getElementById('letter-content');
+    const typedMessageElement = document.getElementById('typed-message');
+    const instruction = document.getElementById('instruction');
+    const celebrateBtn = document.getElementById('celebrate-btn');
+    const fireworksCanvas = document.getElementById('fireworks-canvas');
+    const celebrateBtnContainer = document.getElementById('celebrate-btn-container');
+    const backBtn = document.getElementById('back-btn');
+    const mainTitle = document.getElementById('main-title');
+    const body = document.body;
+    const backgroundMusic = document.getElementById('background-music');
+
+    const balloonContainer = document.getElementById('balloon-container');
+
+    const MESSAGE = "Hey!!,\n Happy Birthday Aanya!! It's been almost 6–7 years since we met. I still remember the day we first met in the skating arena under that neem ka ped 😅 and it's been an amazing journey knowing you. You are the only person that still holds a special place in my heart ❤️ no matter what has happened. Wishing you all the happiness and success in the world. May your day be filled with love, laughter, and unforgettable moments. I wish I could say a lot more...... \n\n- With Love... Ketan";
+    const TYPING_SPEED = 40; 
+    let isEnvelopeOpen = false;
+
+    // --- Typewriter Effect ---
+    function typeMessage(element, message, delay) {
+        return new Promise(resolve => {
+            let i = 0;
+            element.innerHTML = '<span class="typewriter-cursor"></span>'; 
+            const cursor = element.querySelector('.typewriter-cursor');
+            // Get the scrollable container (the 'letter' div)
+            const scrollContainer = document.getElementById('letter-content'); 
+
+            function typeChar() {
+                if (i < message.length) {
+                    const char = message.charAt(i) === '\n' ? '<br>' : message.charAt(i);
+                    cursor.insertAdjacentHTML('beforebegin', char);
+                    i++;
+                    
+                    // *** ADDED: Auto-scroll logic ***
+                    // Scroll to the bottom of the container to keep new text in view
+                    scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                    // **********************************
+
+                    setTimeout(typeChar, delay);
+                } else {
+                    if (cursor) cursor.remove();
+                    resolve();
+                }
+            }
+            setTimeout(typeChar, 100); 
+        });
+    }
+
+
+    // --- Envelope Opening Handler (Modified to start Music and Balloons) ---
+    envelopeContainer.addEventListener('click', async () => {
+        if (isEnvelopeOpen) return;
+
+        isEnvelopeOpen = true;
+        envelopeContainer.classList.add('open');
+        letterContent.classList.remove('hidden');
+        instruction.textContent = "Unveiling the sentiment...";
+        instruction.classList.add('opacity-50');
+
+        // 1. Play music on first interaction (User click)
+        backgroundMusic.play().catch(error => {
+            console.log("Autoplay blocked, user must interact first.", error);
+        });
+        
+        // 2. Start Balloons Automatically!
+        startBalloons();
+
+        await typeMessage(typedMessageElement, MESSAGE, TYPING_SPEED);
+
+        instruction.textContent = "The elegant message is read. Find your grand surprise below!";
+        instruction.classList.remove('opacity-50');
+
+        // Enable the celebration button
+        celebrateBtn.classList.remove('opacity-0', 'cursor-not-allowed');
+        celebrateBtn.disabled = false;
+    });
+
+
+    // --- Fireworks Logic Setup (No changes needed here) ---
+    const ctx = fireworksCanvas.getContext('2d');
+    let particles = [];
+    let running = false;
+    let fireworkInterval;
+
+    function setCanvasSize() {
+        fireworksCanvas.width = window.innerWidth;
+        fireworksCanvas.height = window.innerHeight;
+    }
+
+    class Particle { 
+        constructor(x, y, color, speed, angle, gravity) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.speed = speed;
+            this.angle = angle;
+            this.vx = Math.cos(this.angle) * this.speed;
+            this.vy = Math.sin(this.angle) * this.speed;
+            this.gravity = gravity;
+            this.alpha = 1;
+            this.decay = 0.015;
+            this.size = 2;
+            this.trail = [];
+            this.trailLimit = 5;
+        }
+
+        update() {
+            this.trail.unshift({ x: this.x, y: this.y, alpha: this.alpha });
+            if (this.trail.length > this.trailLimit) {
+                this.trail.pop();
+            }
+
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.alpha -= this.decay;
+            this.size *= 0.98;
+        }
+
+        draw() {
+            for (let i = 0; i < this.trail.length; i++) {
+                const trailAlpha = this.alpha * (i / this.trailLimit) * 0.5;
+                ctx.globalAlpha = trailAlpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.trail[i].x, this.trail[i].y, this.size * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.globalAlpha = this.alpha;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    
+    function createExplosion(x, y, color) {
+        const particleCount = 80;
+        for (let i = 0; i < particleCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 6 + 3; 
+            const gravity = 0.05;
+            particles.push(new Particle(x, y, color, speed, angle, gravity));
+        }
+    }
+
+    function getRandomColor() {
+        const colors = ['#f87171', '#fcd34d', '#4ade80', '#22d3ee', '#818cf8', '#e879f9', '#ffffff', '#FFD700', '#880E4F']; 
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    function gameLoop() {
+        if (!running) return;
+
+        ctx.fillStyle = 'rgba(17, 24, 39, 0.1)'; 
+        ctx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update();
+            particles[i].draw();
+
+            if (particles[i].alpha <= 0.05 || particles[i].size < 0.2) {
+                particles.splice(i, 1);
+            }
+        }
+        
+        ctx.globalAlpha = 1; 
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    function launchFirework() {
+        if (!running) return;
+        const explosionX = Math.random() * fireworksCanvas.width * 0.8 + fireworksCanvas.width * 0.1;
+        const explosionY = Math.random() * fireworksCanvas.height * 0.6;
+        
+        createExplosion(explosionX, explosionY, getRandomColor());
+    }
+
+
+    // --- Celebration and Back Button Handlers (FIX APPLIED HERE) ---
+    function startCelebration() {
+        if (running) return;
+
+        // Ensure music is playing
+        backgroundMusic.play().catch(error => {
+            console.log("Music failed to restart.");
+        });
+
+        // 1. Switch to celebration state
+        body.classList.add('is-celebrating');
+
+        // 2. Start animation loop
+        running = true;
+        gameLoop();
+
+        // 3. Launch fireworks
+        launchFirework(); 
+        fireworkInterval = setInterval(launchFirework, 200); 
+
+        // 4. Stop automatic launching after 8 seconds
+        setTimeout(() => {
+            if(running) { 
+                clearInterval(fireworkInterval);
+                fireworkInterval = null;
+            }
+        }, 8000); 
+    }
+    
+    function stopCelebration() {
+        // 1. Stop fireworks
+        running = false;
+        if (fireworkInterval) {
+            clearInterval(fireworkInterval);
+            fireworkInterval = null;
+        }
+        particles = []; 
+        ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+
+        // 2. Music controls REMOVED/COMMENTED OUT to keep music playing
+        // backgroundMusic.pause(); 
+        // backgroundMusic.currentTime = 0; 
+
+        // 3. Stop balloons and clear them
+        stopBalloons();
+
+        // 4. Switch back to main state
+        body.classList.remove('is-celebrating');
+    }
+
+    celebrateBtn.addEventListener('click', startCelebration);
+    backBtn.addEventListener('click', stopCelebration);
+
+    // --- Balloon Logic (No changes needed here) ---
+    let balloonInterval;
+    const balloonColors = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+
+    function createBalloon() {
+        const balloon = document.createElement('div');
+        balloon.classList.add('balloon');
+        
+        const randomColor = balloonColors[Math.floor(Math.random() * balloonColors.length)];
+        balloon.style.backgroundColor = randomColor;
+
+        const startX = Math.random() * (window.innerWidth - 100) + 50; 
+        balloon.style.left = `${startX}px`;
+
+        const duration = Math.random() * 8 + 7;
+        const offsetX = (Math.random() - 0.5) * 200;
+        const rotateZ = (Math.random() - 0.5) * 20;
+
+        balloon.style.animationDuration = `${duration}s`;
+        balloon.style.setProperty('--offset-x', `${offsetX}px`);
+        balloon.style.setProperty('--rotate-z', `${rotateZ}deg`);
+
+        balloonContainer.appendChild(balloon);
+
+        balloon.addEventListener('animationend', () => {
+            balloon.remove();
+        });
+    }
+
+    function startBalloons() {
+        // Clear any existing balloons
+        balloonContainer.innerHTML = ''; 
+        // Launch initial burst
+        for (let i = 0; i < 10; i++) {
+            createBalloon();
+        }
+        // Continue launching
+        if (!balloonInterval) { 
+            balloonInterval = setInterval(createBalloon, 1000); 
+        }
+    }
+
+    function stopBalloons() {
+        clearInterval(balloonInterval);
+        balloonInterval = null;
+        // Instantly remove all balloons
+        balloonContainer.innerHTML = '';
+    }
+
+    // Ensure canvas is set up on load and resize
+    window.onload = function() {
+        setCanvasSize();
+    };
+
+    window.addEventListener('resize', setCanvasSize);
+
+</script>
+</body>
+</html>
